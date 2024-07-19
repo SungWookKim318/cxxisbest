@@ -1,19 +1,31 @@
+#pragma once
+
+//
+// Creator: SungWook Kim
+// Date: 2024-07-19
+//
+
 #include <iostream>
 #include <vector>
+#include <string>
 #include <functional>
+#include <memory>
+
+#include "stream.hpp"
 
 class Node {
 public:
-    Node();
-    
+    Node(const std::string label);
+
     bool connect(Node* child);
     bool disconnect(Node* child);
     
-    bool isLeaf();
-    
-    
+
+    std::string getLabel();
+
 private:
-    ~Node();
-    
-    std::vector<Node*> children;
-}
+    std::string label;
+
+    std::vector<Stream> inputs;
+    Stream output;
+};

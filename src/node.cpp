@@ -1,10 +1,20 @@
 #include "node.hpp"
 
-Node::Node() {
-    // Constructor
+Node::Node(const std::string label): label(label) {}
+
+bool Node::connect(Node* child)
+{
+    return false;
 }
 
-Node::~Node() {
-    // Destructor
+bool Node::disconnect(Node* child)
+{
+    return false;
+}
+
+
+std::string Node::getLabel()
+{
+    return this->label;
 }
 
