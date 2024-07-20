@@ -5,12 +5,15 @@
 // Date: 2024-07-19
 //
 
-#include <iostream>
 #include <vector>
 #include <string>
 #include <future>
 #include <memory>
 #include <queue>
+#include <optional>
+
+#include "common.hpp"
+#include "node.hpp"
 
 //typedef std::unique_ptr<Stream> StreamPointer;
 
@@ -18,12 +21,15 @@ class Stream {
 
 public:
     Stream() = default;
-
-    std::future<int> addInput(int input);
-    std::future<int> getOutput();
+    
+    bool put(int value);
+    std::optional<int> getCurrentStreamValue();
+    
+    
 private:
-    std::queue<std::future<int>> inputs_;
-    std::vector<std::promise<int>> promises_;
-    std::promise<int> output_;
-    std::mutex mutex_;
+    NodeWeakPtr inputNode_;
+    NodeWeakPtr outputNode_;
+    
+    std::optional<int> value_;
 };
+

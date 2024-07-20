@@ -5,27 +5,31 @@
 // Date: 2024-07-19
 //
 
-#include <iostream>
 #include <vector>
 #include <string>
 #include <functional>
 #include <memory>
 
-#include "stream.hpp"
+#include "common.hpp"
 
 class Node {
 public:
-    Node(const std::string label);
+    Node() = default;
 
-    bool connect(Node* child);
-    bool disconnect(Node* child);
+    bool addChild(const NodeWeakPtr* child);
+    bool removeChild(const NodeWeakPtr* child);
     
+    void processStream();
 
     std::string getLabel();
 
+    std::function<std::optional<int>(std::vector<int>)> functor_;
+    
 private:
-    std::string label;
-
-    std::vector<Stream> inputs;
-    Stream output;
+    std::string label_;
+    // intput streams -> Stream을 가져서 처리하도록 수정
+    std::vector<OptionalStream> inputStreams_;
+    // output stream
+    std::vector<std::shared_ptr<Stream>> outputStreams_;
 };
+
