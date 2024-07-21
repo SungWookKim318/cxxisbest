@@ -86,7 +86,7 @@ private:
                 inputs.push_back(input);
             }
             int result = computeFunction(inputs);
-            std::cout<<name<<" result: "<<result<<std::endl;
+            std::cout << "isMain:" << std::this_thread::get_id() << ", " << name << " result: " << result << std::endl;
             outputPort.send(result);
         }
     }
@@ -124,6 +124,7 @@ void make_edge(OutputPort* out, InputPort* in) {
 }
 
 int main() {
+    std::cout << "isMain:" << std::this_thread::get_id() << std::endl;
     Node A("A", 1, [](std::vector<int> in) { return in[0] + 1; });
     Node B("B", 1, [](std::vector<int> in) { return in[0] * 2; });
     Node C("C", 2, [](std::vector<int> in) { return in[0] + in[1]; });
@@ -139,11 +140,11 @@ int main() {
     make_edge(C.output_port(), F.input_port(1));
 
     A.input_port(0)->put(10);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
     B.input_port(0)->put(20);
 
     // Simulate processing
     std::this_thread::sleep_for(std::chrono::seconds(1));
-
     // Stop all processing
     A.stop();
     B.stop();
