@@ -35,34 +35,64 @@ std::shared_ptr<OutputPort> Node::getOutputPort()
 
 void Node::process()
 {
-    std::vector<std::shared_future<int>> inputFutures;
-    printLogging("Node[" + this->label_ + "]", "start process()");
-    for (const auto& inputPort : inputPorts_)
-    {
-        if (inputPort)
+    std::thread([this]() {
+        std::vector<std::shared_future<int>> inputFutures;
+        printLogging("Node[" + this->label_ + "]", "start process()");
+        for (const auto& inputPort : inputPorts_)
         {
-            inputFutures.push_back(inputPort->getFuture());
-        } else {
-            std::cout << "Node[" << this->label_ << "] inputPort is not ready, is nullptr!" << std::endl;
-            return;
+            if (inputPort)
+            {
+                inputFutures.push_back(inputPort->getFuture());
+            } else {
+                std::cout << "Node[" << this->label_ << "] inputPort is not ready, is nullptr!" << std::endl;
+                return;
+            }
         }
-    }
-    
-    for (auto& inputFuture : inputFutures)
-    {
-        inputFuture.wait();
-    }
-    
-    std::vector<int> values = {};
-    for (auto& inputFuture : inputFutures)
-    {
-        values.push_back(inputFuture.get());
-    }
-    
-    int result = this->functor_(values);
-    printLogging("Node[" + this->label_ + "]", "processed result: " + std::to_string(result));
-    
-    this->outputPort_->send(result);
+        
+        for (auto& inputFuture : inputFutures)
+        {
+            inputFuture.wait();
+        }
+        
+        std::vector<int> values = {};
+        for (auto& inputFuture : inputFutures)
+        {
+            values.push_back(inputFuture.get());
+        }
+        
+        int result = this->functor_(values);
+        printLogging("Node[" + this->label_ + "]", "processed result: " + std::to_string(result));
+        
+        this->outputPort_->send(result);
+    });
+//    std::vector<std::shared_future<int>> inputFutures;
+//    printLogging("Node[" + this->label_ + "]", "start process()");
+//    for (const auto& inputPort : inputPorts_)
+//    {
+//        if (inputPort)
+//        {
+//            inputFutures.push_back(inputPort->getFuture());
+//        } else {
+//            std::cout << "Node[" << this->label_ << "] inputPort is not ready, is nullptr!" << std::endl;
+//            return;
+//        }
+//    }
+//    
+//    for (auto& inputFuture : inputFutures)
+//    {
+//        inputFuture.wait();
+//    }
+//    
+//    std::vector<int> values = {};
+//    for (auto& inputFuture : inputFutures)
+//    {
+//        values.push_back(inputFuture.get());
+//    }
+//    
+//    int result = this->functor_(values);
+//    printLogging("Node[" + this->label_ + "]", "processed result: " + std::to_string(result));
+//    
+//    this->outputPort_->send(result);
 }
 
 void Node::scheduleProcessing()
