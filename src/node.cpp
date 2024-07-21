@@ -1,6 +1,7 @@
 #include "node.hpp"
 
 #include <iostream>
+#include <thread>
 
 #include "common.hpp"
 #include "port.hpp"
@@ -8,7 +9,7 @@
 
 Node::Node(std::string label, FunctorType functor) : label_(label), functor_(functor), outputPort_(std::make_shared<OutputPort>(label))
 {
-    std::cout << "Node"<< '[' << this->label_ << ']' << "is Created" << std::endl;
+    printLogging("Node[" + this->label_ + ']', "is Created");
 }
 
 std::shared_ptr<InputPort> Node::getInputPort(size_t index)
@@ -28,24 +29,39 @@ std::shared_ptr<InputPort> Node::getInputPort(size_t index)
 
 std::shared_ptr<OutputPort> Node::getOutputPort()
 {
-    std::cout << "Node[" << this->label_ << "] output_port()" << this->outputPort_ << std::endl;
+    printLogging("Node[" + this->label_ + "]", "getOutputPort()");
     return this->outputPort_;
 }
 
 void Node::process()
 {
-    std::vector<int> values;
+    std::vector<std::shared_future<int>> inputFutures;
+    printLogging("Node[" + this->label_ + "]", "start process()");
     for (const auto& inputPort : inputPorts_)
     {
-        if (inputPort && inputPort->isReady())
+        if (inputPort)
         {
-            values.push_back(inputPort->getValue());
-        } else { 
+            inputFutures.push_back(inputPort->getFuture());
+        } else {
+            std::cout << "Node[" << this->label_ << "] inputPort is not ready, is nullptr!" << std::endl;
             return;
         }
     }
+    
+    for (auto& inputFuture : inputFutures)
+    {
+        inputFuture.wait();
+    }
+    
+    std::vector<int> values = {};
+    for (auto& inputFuture : inputFutures)
+    {
+        values.push_back(inputFuture.get());
+    }
+    
     int result = this->functor_(values);
-    std::cout << "Node[" << this->label_ << "] processed result: " << result << std::endl;
+    printLogging("Node[" + this->label_ + "]", "processed result: " + std::to_string(result));
+    
     this->outputPort_->send(result);
 }
 
@@ -73,5 +89,5 @@ std::string Node::getLabel()
 
 
 Node::~Node() { 
-    std::cout << "Node[" << this->label_ << "] is Deleted" << std::endl;
+    printLogging("Node[" + this->label_ + "]", "is Delete");
 }

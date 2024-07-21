@@ -8,8 +8,14 @@
 
 #include <memory>
 #include <optional>
+#include <thread>
 
 class Stream;
 class Node;
 class InputPort;
 class OutputPort;
+
+
+void printLogging(const std::string& prefix, const std::string& message);
+
+extern std::thread::id mainThreadId;

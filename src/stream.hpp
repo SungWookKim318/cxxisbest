@@ -21,12 +21,13 @@ class Stream {
 
 public:
     explicit Stream(std::shared_ptr<InputPort> inputPort);
-    std::shared_future<int> createFuture();
+    void prepareFuture();
     void transferValue(int value);
     
     std::string getLabel();
 private:
     std::shared_ptr<InputPort> inputPort_;
     std::promise<int> promise_;
+    std::shared_future<int> future_;
 };
 

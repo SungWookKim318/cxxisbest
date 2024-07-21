@@ -16,7 +16,7 @@ std::shared_future<int> InputPort::getFuture() const
 
 InputPort::InputPort(std::weak_ptr<Node> node, std::string label) : node_(node), label_(label)
 {
-    std::cout << "InputPort Create - [" << label_ << "]" << std::endl;
+    printLogging("InputPort["+this->label_+']', "Created");
 }
 
 std::string InputPort::getLabel() const
@@ -26,7 +26,7 @@ std::string InputPort::getLabel() const
 
 OutputPort::OutputPort(std::string label) : label_(label), streams_({})
 {
-    std::cout << "OutputPort create [" << label << "]" << std::endl;
+    printLogging("OutputPort["+label+']', "created");
 }
 
 std::string OutputPort::getLabel() const
@@ -41,10 +41,10 @@ void OutputPort::addStream(std::shared_ptr<Stream> stream)
 
 void OutputPort::send(int data)
 {
-    std::cout << "OutputPort[" << label_ << "] ready to send data: " << data << std::endl;
+    printLogging("OutputPort["+this->label_+']', "ready to send data: " + std::to_string(data));
     for (const auto& stream : streams_)
     {
-        std::cout << "OutputPort[" << label_ << "] -> [" <<  stream->getLabel()  << "] send data: " << data << std::endl;
+        printLogging("OutputPort["+this->label_+']', "] -> [" + stream->getLabel() + "] send data:" + std::to_string(data));
         stream->transferValue(data);
     }
 }

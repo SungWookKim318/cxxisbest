@@ -1,9 +1,12 @@
 #include <iostream>
+#include <thread>
 
+#include "common.hpp"
 #include "node.hpp"
 #include "port.hpp"
 
 int main() {
+    mainThreadId = std::this_thread::get_id();
     using namespace std;
     // 예제 계산 함수 (모든 입력의 합을 계산)
     auto sumFunc = [](std::vector<int> values) -> int {
