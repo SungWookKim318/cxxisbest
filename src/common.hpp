@@ -9,9 +9,7 @@
 #include <memory>
 #include <optional>
 
-class Node;
-typedef std::weak_ptr<Node> NodeWeakPtr;
-
 class Stream;
-typedef std::optional<std::shared_ptr<Stream>> OptionalStream;
-
+class Node;
+class InputPort;
+class OutputPort;

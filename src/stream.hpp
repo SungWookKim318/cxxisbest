@@ -20,16 +20,13 @@
 class Stream {
 
 public:
-    Stream() = default;
+    explicit Stream(std::shared_ptr<InputPort> inputPort);
+    std::shared_future<int> createFuture();
+    void transferValue(int value);
     
-    bool put(int value);
-    std::optional<int> getCurrentStreamValue();
-    
-    
+    std::string getLabel();
 private:
-    NodeWeakPtr inputNode_;
-    NodeWeakPtr outputNode_;
-    
-    std::optional<int> value_;
+    std::shared_ptr<InputPort> inputPort_;
+    std::promise<int> promise_;
 };
 

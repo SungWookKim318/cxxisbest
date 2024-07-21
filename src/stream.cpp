@@ -1,25 +1,30 @@
 #include "stream.hpp"
 
 #include <iostream>
+#include <future>
 
-bool Stream::put(int value)
+#include "port.hpp"
+
+Stream::Stream(std::shared_ptr<InputPort> inputPort) : inputPort_(inputPort)
 {
-    if (this->outputNode_.expired()) {
-        std::cout << "Output node is deleted." << std::endl;
-        return false;
-    }
-    
-    auto output = this->outputNode_.lock();
-    if (output == nullptr) {
-        std::cout << "Output node is deleted." << std::endl;
-        return false;
-    }
-    
-    std::cout << "Put value " << value << " to " << output->getLabel() << std::endl;
-    output->processStream();
-    return true;
+    std::cout << "Stream[" << inputPort->getLabel() << "] is Created" << std::endl;
+} 
+
+void Stream::transferValue(int value)
+{
+    this->promise_.set_value(value);
 }
 
-std::optional<int> Stream::getCurrentStreamValue() {
-    return this->value_;
+std::shared_future<int> Stream::createFuture()
+{
+    std::promise<int> promise;
+    auto future = promise.get_future().share();
+    this->promise_ = std::move(promise);
+    this->inputPort_->setFuture(future);
+    return future;
+}
+
+std::string Stream::getLabel()
+{
+    return "Stream";
 }

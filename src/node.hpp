@@ -12,24 +12,27 @@
 
 #include "common.hpp"
 
-class Node {
+typedef std::function<int(std::vector<int>)> FunctorType;
+class Node : public std::enable_shared_from_this<Node> {
 public:
-    Node() = default;
-
-    bool addChild(const NodeWeakPtr* child);
-    bool removeChild(const NodeWeakPtr* child);
+    Node(std::string label, FunctorType functor);
+    virtual ~Node();
     
-    void processStream();
+    std::shared_ptr<InputPort> getInputPort(size_t index);
+    std::shared_ptr<OutputPort> getOutputPort();
+    
+    virtual void process();
+    
+    void scheduleProcessing();
 
     std::string getLabel();
-
-    std::function<std::optional<int>(std::vector<int>)> functor_;
     
 private:
     std::string label_;
-    // intput streams -> Stream을 가져서 처리하도록 수정
-    std::vector<OptionalStream> inputStreams_;
-    // output stream
-    std::vector<std::shared_ptr<Stream>> outputStreams_;
+
+    std::vector<std::shared_ptr<InputPort>> inputPorts_;
+    std::shared_ptr<OutputPort> outputPort_;
+
+    FunctorType functor_;
 };
 

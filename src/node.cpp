@@ -2,58 +2,76 @@
 
 #include <iostream>
 
+#include "common.hpp"
+#include "port.hpp"
 #include "stream.hpp"
-bool Node::addChild(const NodeWeakPtr* child)
+
+Node::Node(std::string label, FunctorType functor) : label_(label), functor_(functor), outputPort_(std::make_shared<OutputPort>(label))
 {
-    return true;
+    std::cout << "Node"<< '[' << this->label_ << ']' << "is Created" << std::endl;
 }
 
-bool Node::removeChild(const NodeWeakPtr* child)
+std::shared_ptr<InputPort> Node::getInputPort(size_t index)
 {
-    return true;
-}
-
-void Node::processStream()
-{
-    std::cout << '[' << this->label_ << ']' << "Processing stream" << std::endl;
-    
-    
-    // 1. input stream을 확인하고 값을 받아오기
-    std::vector<int> inputValues;
-    for (const auto& stream : this->inputStreams_) {
-        if(!stream) {
-            std::cout << "Stream is empty" << std::endl;
-            return;
-        }
+    if (index >= inputPorts_.size())
+    {
+        inputPorts_.resize(index + 1);
+    }
+    if (!inputPorts_[index])
+    {
+        std::string label = this->label_ + "-IntputPort[" + std::to_string(index) + "]";
+        inputPorts_[index] = std::make_shared<InputPort>(shared_from_this(), label);
         
-        if(stream->get()->getCurrentStreamValue() ; const auto value = stream->get()->getCurrentStreamValue().value()) {
-            inputValues.push_back(value);
-        } else {
-            std::cout << "Stream is update next time" << std::endl;
+    }
+    return inputPorts_[index];
+}
+
+std::shared_ptr<OutputPort> Node::getOutputPort()
+{
+    std::cout << "Node[" << this->label_ << "] output_port()" << this->outputPort_ << std::endl;
+    return this->outputPort_;
+}
+
+void Node::process()
+{
+    std::vector<int> values;
+    for (const auto& inputPort : inputPorts_)
+    {
+        if (inputPort && inputPort->isReady())
+        {
+            values.push_back(inputPort->getValue());
+        } else { 
             return;
         }
     }
-    
-    // 2. Functor에게 전달하고 결과 요청
-    const auto result = this->functor_(inputValues);
-    
-    if(result.has_value()) {
-        // 3. output stream에 전달
-        for (const auto& stream : this->outputStreams_) {
-            if(!stream) {
-                std::cout << "Stream is empty" << std::endl;
-                return;
-            }
-            stream->put(result.value());
-        }
-    } else {
-        std::cout << "No result from functor" << std::endl;
-    }
+    int result = this->functor_(values);
+    std::cout << "Node[" << this->label_ << "] processed result: " << result << std::endl;
+    this->outputPort_->send(result);
 }
 
+void Node::scheduleProcessing()
+{
+    std::vector<std::shared_future<int>> futures;
+    for (const auto& inputPort : inputPorts_) {
+        if (inputPort) {
+            futures.push_back(inputPort->getFuture());
+        }
+    }
+
+    std::thread([self = shared_from_this(), futures]() {
+        for (const auto& future : futures) {
+            future.wait(); // 모든 future가 준비될 때까지 대기
+        }
+        self->process();
+    }).detach();
+}
 
 std::string Node::getLabel()
 {
     return this->label_;
 }
 
+
+Node::~Node() { 
+    std::cout << "Node[" << this->label_ << "] is Deleted" << std::endl;
+}
