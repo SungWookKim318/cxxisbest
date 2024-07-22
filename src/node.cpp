@@ -4,115 +4,44 @@
 #include <thread>
 
 #include "common.hpp"
-#include "port.hpp"
+#include "InputPort.hpp"
+#include "OutputPort.hpp"
 #include "stream.hpp"
 
-Node::Node(std::string label, FunctorType functor) : label_(label), functor_(functor), outputPort_(std::make_shared<OutputPort>(label))
+Node::Node(std::string label, FunctorType functor) 
+: label_(label), functor_(functor), inputPorts_({}), running_(true)
 {
     printLogging("Node[" + this->label_ + ']', "is Created");
+    const auto outputPortLabel = label + "-OutputPort";
+    outputPort_ = std::make_shared<OutputPort>(outputPortLabel);
+    
+    workerThread_ = std::thread(&Node::threadProcess, this);
 }
 
-std::shared_ptr<InputPort> Node::getInputPort(size_t index)
-{
-    if (index >= inputPorts_.size())
-    {
-        inputPorts_.resize(index + 1);
+std::shared_ptr<InputPort> Node::getInputPort(size_t index) {
+    if (index >= inputPorts_.size()) {
+        inputPorts_.resize(index + 1, nullptr);
     }
-    if (!inputPorts_[index])
-    {
-        std::string label = this->label_ + "-IntputPort[" + std::to_string(index) + "]";
-        inputPorts_[index] = std::make_shared<InputPort>(shared_from_this(), label);
-        
+    if (!inputPorts_[index]) {
+        const std::string label = this->label_ + "-InputPort[" + std::to_string(index) + "]";
+        inputPorts_[index] = std::make_unique<InputPort>(label);
     }
-    return inputPorts_[index];
+    return inputPorts_.at(index);
 }
 
-std::shared_ptr<OutputPort> Node::getOutputPort()
-{
-    printLogging("Node[" + this->label_ + "]", "getOutputPort()");
-    return this->outputPort_;
+
+std::shared_ptr<OutputPort> Node::getOutputPort() {
+    return outputPort_;
 }
 
-void Node::process()
-{
-    std::thread([this]() {
-        std::vector<std::shared_future<int>> inputFutures;
-        printLogging("Node[" + this->label_ + "]", "start process()");
-        for (const auto& inputPort : inputPorts_)
-        {
-            if (inputPort)
-            {
-                inputFutures.push_back(inputPort->getFuture());
-            } else {
-                std::cout << "Node[" << this->label_ << "] inputPort is not ready, is nullptr!" << std::endl;
-                return;
-            }
-        }
-        
-        for (auto& inputFuture : inputFutures)
-        {
-            inputFuture.wait();
-        }
-        
-        std::vector<int> values = {};
-        for (auto& inputFuture : inputFutures)
-        {
-            values.push_back(inputFuture.get());
-        }
-        
-        int result = this->functor_(values);
-        printLogging("Node[" + this->label_ + "]", "processed result: " + std::to_string(result));
-        
-        this->outputPort_->send(result);
-    });
-//    std::vector<std::shared_future<int>> inputFutures;
-//    printLogging("Node[" + this->label_ + "]", "start process()");
-//    for (const auto& inputPort : inputPorts_)
-//    {
-//        if (inputPort)
-//        {
-//            inputFutures.push_back(inputPort->getFuture());
-//        } else {
-//            std::cout << "Node[" << this->label_ << "] inputPort is not ready, is nullptr!" << std::endl;
-//            return;
-//        }
-//    }
-//    
-//    for (auto& inputFuture : inputFutures)
-//    {
-//        inputFuture.wait();
-//    }
-//    
-//    std::vector<int> values = {};
-//    for (auto& inputFuture : inputFutures)
-//    {
-//        values.push_back(inputFuture.get());
-//    }
-//    
-//    int result = this->functor_(values);
-//    printLogging("Node[" + this->label_ + "]", "processed result: " + std::to_string(result));
-//    
-//    this->outputPort_->send(result);
-}
-
-void Node::scheduleProcessing()
-{
-    std::vector<std::shared_future<int>> futures;
-    for (const auto& inputPort : inputPorts_) {
-        if (inputPort) {
-            futures.push_back(inputPort->getFuture());
-        }
+void Node::stop() {
+    running_ = false;
+    for (auto& port : inputPorts_) {
+        port->close();
     }
-
-    std::thread([self = shared_from_this(), futures]() {
-        for (const auto& future : futures) {
-            future.wait(); // 모든 future가 준비될 때까지 대기
-        }
-        self->process();
-    }).detach();
 }
 
-std::string Node::getLabel()
+const std::string& Node::getLabel() const
 {
     return this->label_;
 }
@@ -120,4 +49,20 @@ std::string Node::getLabel()
 
 Node::~Node() { 
     printLogging("Node[" + this->label_ + "]", "is Delete");
+}
+
+
+
+void Node::threadProcess() {
+    while (running_) {
+        std::vector<int> inputs;
+        for (auto& port : inputPorts_) {
+            int input = port->get();
+            if (!running_)
+                return; // Check running state after potentially blocking operation
+            inputs.push_back(input);
+        }
+        int result = functor_(inputs);
+        outputPort_->send(result);
+    }
 }

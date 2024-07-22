@@ -9,30 +9,33 @@
 #include <string>
 #include <functional>
 #include <memory>
+#include <atomic>
 
 #include "common.hpp"
 
 typedef std::function<int(std::vector<int>)> FunctorType;
-class Node : public std::enable_shared_from_this<Node> {
+
+class Node {
 public:
     Node(std::string label, FunctorType functor);
     virtual ~Node();
     
     std::shared_ptr<InputPort> getInputPort(size_t index);
     std::shared_ptr<OutputPort> getOutputPort();
+    void stop();
     
-    virtual void process();
-    
-    void scheduleProcessing();
-
-    std::string getLabel();
-    
+    const std::string& getLabel() const;
+protected:
+//    virtual void process(); //protect
 private:
-    std::string label_;
-
     std::vector<std::shared_ptr<InputPort>> inputPorts_;
     std::shared_ptr<OutputPort> outputPort_;
-
-    FunctorType functor_;
+    std::function<int(std::vector<int>)> functor_;
+    std::thread workerThread_;
+    std::atomic<bool> running_;
+    
+    const std::string label_;
+    
+    void threadProcess();
 };
 

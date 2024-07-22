@@ -10,7 +10,6 @@
 #include <optional>
 #include <thread>
 
-class Stream;
 class Node;
 class InputPort;
 class OutputPort;
