@@ -23,7 +23,7 @@ private:
     std::condition_variable cv_;
     std::atomic<bool> active_;
 
-    std::string label_;
+    const std::string label_;
 };
 
 //void make_edge(std::shared_ptr<OutputPort> outputPort, std::shared_ptr<InputPort> inputPort);

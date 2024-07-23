@@ -16,6 +16,37 @@ Node::Node(std::string label, FunctorType functor)
     outputPort_ = std::make_shared<OutputPort>(outputPortLabel);
     
     workerThread_ = std::thread(&Node::threadProcess, this);
+    workerThread_.detach();
+}
+
+
+Node::~Node() {
+    if (workerThread_.joinable()) {
+        this->stop();
+        workerThread_.join();
+    }
+    printLogging("Node[" + this->label_ + "]", "is Delete");
+}
+
+void Node::threadProcess() {
+    while (running_) {
+        std::vector<int> inputs;
+        for (auto& port : inputPorts_) {
+            int input = port->get();
+            if (!running_)
+                return; // Check running state after potentially blocking operation
+            inputs.push_back(input);
+        }
+        int result = functor_(inputs);
+        outputPort_->send(result);
+    }
+}
+
+void Node::stop() {
+    running_ = false;
+    for (auto& port : inputPorts_) {
+        port->close();
+    }
 }
 
 std::shared_ptr<InputPort> Node::getInputPort(size_t index) {
@@ -34,35 +65,7 @@ std::shared_ptr<OutputPort> Node::getOutputPort() {
     return outputPort_;
 }
 
-void Node::stop() {
-    running_ = false;
-    for (auto& port : inputPorts_) {
-        port->close();
-    }
-}
-
 const std::string& Node::getLabel() const
 {
     return this->label_;
-}
-
-
-Node::~Node() { 
-    printLogging("Node[" + this->label_ + "]", "is Delete");
-}
-
-
-
-void Node::threadProcess() {
-    while (running_) {
-        std::vector<int> inputs;
-        for (auto& port : inputPorts_) {
-            int input = port->get();
-            if (!running_)
-                return; // Check running state after potentially blocking operation
-            inputs.push_back(input);
-        }
-        int result = functor_(inputs);
-        outputPort_->send(result);
-    }
 }
