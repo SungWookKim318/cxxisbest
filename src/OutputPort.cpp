@@ -1,9 +1,10 @@
 #include "OutputPort.hpp"
 #include "InputPort.hpp"
 
-OutputPort::OutputPort(std::string label) : label_(label), connectedPorts({})
+OutputPort::OutputPort(std::string label) 
+: label_("OutputPort("+ label + ')'), connectedPorts({})
 {
-    printLogging("OutputPort["+label+']', "created");
+    printLog(label_, "created");
 }
 
 void OutputPort::connect(std::shared_ptr<InputPort> port) {
@@ -12,6 +13,8 @@ void OutputPort::connect(std::shared_ptr<InputPort> port) {
 
 void OutputPort::send(int data) {
     for (const auto& port : connectedPorts) {
-        port->put(data);
+        if (port) {
+            port->put(data);
+        }
     }
 }

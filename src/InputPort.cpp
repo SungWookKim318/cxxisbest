@@ -7,9 +7,9 @@
 #include "node.hpp"
 
 InputPort::InputPort(const std::string& label) 
-: label_(label), active_(true), dataQueue_(), mtx_(), cv_()
+: label_("InputPort("+ label+')'), active_(true), dataQueue_(), mtx_(), cv_()
 {
-    printLogging("InputPort["+this->label_+']', "Created");
+    printLog(this->label_, "Created");
 }
 
 void InputPort::put(int data) {
@@ -28,7 +28,7 @@ int InputPort::get() {
         dataQueue_.pop();
         return data;
     }
-    return 0; // Returning zero could signify no more data (or a default value).
+    return 0;
 }
 
 void InputPort::close() {
@@ -37,12 +37,7 @@ void InputPort::close() {
     cv_.notify_all();
 }
 
-std::string InputPort::getLabel() const
+const std::string InputPort::getLabel() const
 {
     return this->label_;
 }
-
-//void make_edge(std::shared_ptr<OutputPort> outputPort, std::shared_ptr<InputPort> inputPort) {
-//    auto stream = std::make_shared<Stream>(inputPort);
-//    outputPort->addStream(stream);
-//}

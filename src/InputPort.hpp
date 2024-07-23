@@ -10,9 +10,9 @@
 class InputPort
 {
 public:
-    InputPort(const std::string& label = "unknown input port");
+    InputPort(const std::string& label);
 
-    std::string getLabel() const;
+    const std::string getLabel() const;
 
     void put(int data);
     int get();

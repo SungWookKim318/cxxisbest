@@ -17,7 +17,7 @@ typedef std::function<int(std::vector<int>)> FunctorType;
 
 class Node {
 public:
-    Node(std::string label, FunctorType functor);
+    Node(const std::string& label, const size_t inputCount, FunctorType functor);
     virtual ~Node();
     
     std::shared_ptr<InputPort> getInputPort(size_t index);

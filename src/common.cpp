@@ -5,10 +5,10 @@
 
 std::thread::id mainThreadId;
 
-void printLogging(const std::string &prefix, const std::string &message)
+void printLog(const std::string &prefix, const std::string &message)
 {
-    auto mainThreadFlag = std::this_thread::get_id() == mainThreadId ? "[Main]" : "[Sub]";
+    auto mainThreadFlag = std::this_thread::get_id() == mainThreadId ? "[Main-" : "[ Sub-";
     
-    std::cout << mainThreadFlag << " THREAD[" << std::this_thread::get_id() << "],"
-    << prefix << " " << message << std::endl;
+    std::cout << mainThreadFlag << std::this_thread::get_id() << "]["
+    << prefix << "] " << message << std::endl;
 }

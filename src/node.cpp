@@ -8,36 +8,49 @@
 #include "OutputPort.hpp"
 #include "stream.hpp"
 
-Node::Node(std::string label, FunctorType functor) 
-: label_(label), functor_(functor), inputPorts_({}), running_(true)
+Node::Node(const std::string& label, const size_t inputCount, FunctorType functor)
+: label_("Node(" + label + ')'), functor_(functor), inputPorts_({}), running_(true)
 {
-    printLogging("Node[" + this->label_ + ']', "is Created");
-    const auto outputPortLabel = label + "-OutputPort";
+    printLog(this->label_, "is Created");
+    for (size_t i = 0; i < inputCount; ++i) {
+        const auto inputPortLabel = label + ':' + std::to_string(i);
+        inputPorts_.push_back(std::make_shared<InputPort>(inputPortLabel));
+    }
+    const auto outputPortLabel = label + ":0";
     outputPort_ = std::make_shared<OutputPort>(outputPortLabel);
-    
     workerThread_ = std::thread(&Node::threadProcess, this);
     workerThread_.detach();
 }
 
 
 Node::~Node() {
+    running_ = false;
     if (workerThread_.joinable()) {
         this->stop();
         workerThread_.join();
     }
-    printLogging("Node[" + this->label_ + "]", "is Delete");
+    printLog(this->label_, "is Delete");
 }
 
 void Node::threadProcess() {
     while (running_) {
         std::vector<int> inputs;
+        if (inputPorts_.empty() == true) {
+//            printLogging("Node(" + this->label_ + ')', "has no input port");
+            continue;
+        }
         for (auto& port : inputPorts_) {
             int input = port->get();
             if (!running_)
-                return; // Check running state after potentially blocking operation
+                return;
             inputs.push_back(input);
         }
+        if (running_ == false) {
+            printLog(this->label_, "is stopped");
+            return;
+        }
         int result = functor_(inputs);
+        printLog(this->label_, "value is :" + std::to_string(result));
         outputPort_->send(result);
     }
 }
@@ -51,13 +64,10 @@ void Node::stop() {
 
 std::shared_ptr<InputPort> Node::getInputPort(size_t index) {
     if (index >= inputPorts_.size()) {
-        inputPorts_.resize(index + 1, nullptr);
+        printLog(this->label_, "has no input port");
+        return nullptr;
     }
-    if (!inputPorts_[index]) {
-        const std::string label = this->label_ + "-InputPort[" + std::to_string(index) + "]";
-        inputPorts_[index] = std::make_unique<InputPort>(label);
-    }
-    return inputPorts_.at(index);
+    return inputPorts_[index];
 }
 
 

@@ -15,6 +15,6 @@ class InputPort;
 class OutputPort;
 
 
-void printLogging(const std::string& prefix, const std::string& message);
+void printLog(const std::string& prefix, const std::string& message);
 
 extern std::thread::id mainThreadId;
